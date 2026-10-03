@@ -1,0 +1,8 @@
+﻿name = "my-workout-tracker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "workout-db"
+database_id = "18b14543-bd61-42ab-be79-65c769dd9d89"
