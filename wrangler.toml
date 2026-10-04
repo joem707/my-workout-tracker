@@ -7,4 +7,4 @@ binding = "DB"
 database_name = "workout-db"
 database_id = "18b14543-bd61-42ab-be79-65c769dd9d89"
 
-assets = { directory = "./dist" }
+assets = { directory = "./dist", binding = "ASSETS" }
