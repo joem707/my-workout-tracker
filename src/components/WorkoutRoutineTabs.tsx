@@ -1,142 +1,130 @@
-import { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 
-type RoutinePhase = 'warmup' | 'cooldown';
-
-type RoutineItem = {
-  name: string;
-  description: string;
-  durationSeconds: number;
-};
-
-const routines: Record<RoutinePhase, RoutineItem[]> = {
-  warmup: [
-    {
-      name: 'Brisk walk',
-      description: 'Raise your heart rate with an easy, steady walk.',
-      durationSeconds: 180,
-    },
-    {
-      name: 'Arm circles',
-      description: 'Make controlled forward and backward circles with both arms.',
-      durationSeconds: 60,
-    },
-    {
-      name: 'Leg swings',
-      description: 'Hold a support and swing each leg gently front to back.',
-      durationSeconds: 60,
-    },
-  ],
-  cooldown: [
-    {
-      name: 'Easy walk',
-      description: 'Walk slowly until your breathing begins to settle.',
-      durationSeconds: 180,
-    },
-    {
-      name: 'Standing quadriceps stretch',
-      description: 'Hold each side gently without bouncing.',
-      durationSeconds: 60,
-    },
-    {
-      name: 'Hamstring stretch',
-      description: 'Hinge at the hips and hold a comfortable stretch on each side.',
-      durationSeconds: 60,
-    },
-  ],
-};
-
-const phases: { id: RoutinePhase; label: string }[] = [
-  { id: 'warmup', label: 'Pre-Workout' },
-  { id: 'cooldown', label: 'Post-Workout' },
-];
-
-function formatDuration(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-
-  if (remainingSeconds === 0) {
-    return `${minutes} min`;
-  }
-
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+interface RoutineExercise {
+  warmup_id?: number;
+  cooldown_id?: number;
+  sequence_order: number;
+  exercise_name?: string;
+  stretch_name?: string;
+  exercise_category?: string;
+  target_muscle_group?: string;
+  equipment_needed?: string;
+  target_sets?: number;
+  target_reps?: number;
+  duration_seconds?: number;
+  applicable_split: string;
+  safety_cue: string;
 }
 
 export default function WorkoutRoutineTabs() {
-  const [activePhase, setActivePhase] = useState<RoutinePhase>('warmup');
+  const [activeTab, setActiveTab] = useState<'warmup' | 'cooldown'>('warmup');
+  const [items, setItems] = useState<RoutineExercise[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
+
+    fetch('/api/' + activeTab)
+      .then((res) => {
+        if (!res.ok) throw new Error('HTTP error! status: ' + res.status);
+        return res.json();
+      })
+      .then((data: RoutineExercise[]) => {
+        if (isMounted) {
+          setItems(data);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(err.message);
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab]);
 
   return (
-    <section aria-label="Workout routines" style={{ maxWidth: 640, color: '#20332d' }}>
-      <div
-        aria-label="Workout phase"
-        role="tablist"
-        style={{ display: 'flex', gap: 8, borderBottom: '1px solid #d6e1dc' }}
-      >
-        {phases.map((phase) => {
-          const isActive = activePhase === phase.id;
+    <div style={{ maxWidth: '800px', margin: '40px auto', fontFamily: 'system-ui, sans-serif', padding: '0 20px' }}>
+      <h1 style={{ textAlign: 'center', marginBottom: '24px' }}>Workout Routine Tracker</h1>
 
-          return (
-            <button
-              key={phase.id}
-              id={`${phase.id}-tab`}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={`${phase.id}-panel`}
-              onClick={() => setActivePhase(phase.id)}
-              style={{
-                padding: '12px 16px',
-                border: 0,
-                borderBottom: isActive ? '3px solid #16745b' : '3px solid transparent',
-                background: 'transparent',
-                color: isActive ? '#145d49' : '#61736c',
-                cursor: 'pointer',
-                font: 'inherit',
-                fontWeight: isActive ? 700 : 500,
-              }}
-            >
-              {phase.label}
-            </button>
-          );
-        })}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+        <button
+          onClick={() => setActiveTab('warmup')}
+          style={{
+            flex: 1,
+            padding: '12px',
+            cursor: 'pointer',
+            fontWeight: 600,
+            border: 'none',
+            borderRadius: '6px',
+            backgroundColor: activeTab === 'warmup' ? '#2563eb' : '#e5e7eb',
+            color: activeTab === 'warmup' ? '#fff' : '#1f2937'
+          }}
+        >
+          Warm-Up Routine
+        </button>
+        <button
+          onClick={() => setActiveTab('cooldown')}
+          style={{
+            flex: 1,
+            padding: '12px',
+            cursor: 'pointer',
+            fontWeight: 600,
+            border: 'none',
+            borderRadius: '6px',
+            backgroundColor: activeTab === 'cooldown' ? '#2563eb' : '#e5e7eb',
+            color: activeTab === 'cooldown' ? '#fff' : '#1f2937'
+          }}
+        >
+          Cool-Down Routine
+        </button>
       </div>
 
-      {phases.map((phase) => (
-        <div
-          key={phase.id}
-          id={`${phase.id}-panel`}
-          role="tabpanel"
-          aria-labelledby={`${phase.id}-tab`}
-          hidden={activePhase !== phase.id}
-          style={{ paddingTop: 8 }}
-        >
-          <ol style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {routines[phase.id].map((item, index) => (
-              <li
-                key={item.name}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '32px 1fr auto',
-                  alignItems: 'start',
-                  gap: 12,
-                  padding: '16px 4px',
-                  borderBottom: '1px solid #e5ece8',
-                }}
-              >
-                <span aria-hidden="true" style={{ color: '#75877f', fontVariantNumeric: 'tabular-nums' }}>
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <div>
-                  <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>{item.name}</h3>
-                  <p style={{ margin: 0, color: '#61736c', lineHeight: 1.5 }}>{item.description}</p>
-                </div>
-                <span style={{ color: '#145d49', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  {formatDuration(item.durationSeconds)}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      ))}
-    </section>
+      {loading && <p style={{ textAlign: 'center' }}>Loading routine from D1 database...</p>}
+      {error && <p style={{ color: 'red', textAlign: 'center' }}>Error: {error}</p>}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {items.map((item, idx) => (
+          <div
+            key={item.warmup_id ?? item.cooldown_id ?? idx}
+            style={{
+              padding: '16px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              backgroundColor: '#fff',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h3 style={{ margin: 0 }}>
+                {item.sequence_order}. {item.exercise_name ?? item.stretch_name}
+              </h3>
+              <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '999px', backgroundColor: '#e0f2fe', color: '#0369a1' }}>
+                {item.applicable_split}
+              </span>
+            </div>
+
+            <p style={{ margin: '4px 0', fontSize: '14px', color: '#4b5563' }}>
+              {item.target_sets ? 'Sets: ' + item.target_sets + ' | ' : ''}
+              {item.target_reps ? 'Reps: ' + item.target_reps + ' | ' : ''}
+              {item.duration_seconds ? 'Duration: ' + item.duration_seconds + 's' : ''}
+              {item.equipment_needed ? ' | Equipment: ' + item.equipment_needed : ''}
+              {item.target_muscle_group ? 'Target: ' + item.target_muscle_group : ''}
+            </p>
+
+            <p style={{ margin: '8px 0 0', fontSize: '13px', fontStyle: 'italic', color: '#6b7280' }}>
+              💡 {item.safety_cue}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
